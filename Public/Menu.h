@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubsystem.h"
+#include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineSessionInterface.h"
 
 #include "Menu.generated.h"
 
@@ -28,7 +30,13 @@ protected:
 
 	//callbacks
 	UFUNCTION()
-	void OnCreateSessionComplete( bool bWasSuccessful);
+	void OnCreateSession(bool bWasSuccessful);
+	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& sessionResults, bool bWasSuccessful);
+	void OnJoinSession(EOnJoinSessionCompleteResult::Type result);
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+	UFUNCTION()
+	void OnStartSession(bool bWasSuccessful);
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -52,5 +60,5 @@ private:
 	int32 numPublicConnections{ 4 };
 	FString matchType{TEXT("FFA")};
 
-	FMulitiplayerOnCreateSessionComplete MulitiplayerOnCreateSessionComplete;
+	FMultiplayerOnCreateSessionComplete MulitiplayerOnCreateSessionComplete;
 };

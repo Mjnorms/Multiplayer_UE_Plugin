@@ -14,7 +14,11 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // New Delegates
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMulitiplayerOnCreateSessionComplete, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam	(FMultiplayerOnCreateSessionComplete	, bool, bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_TwoParams		(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& sessionResults, bool bWasSuccessful);	//Cannot be Dynamic as FOnlineSearchResults is not a UObject :(
+DECLARE_MULTICAST_DELEGATE_OneParam			(FMultiplayerOnJoinSessionComplete , EOnJoinSessionCompleteResult::Type result);										//Cannot be Dynamic as EOnJoinSessionCompleteResult is not a UEnum :(
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam	(FMultiplayerOnDestorySessionComplete	, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam	(FMultiplayerOnStartSessionComplete		, bool, bWasSuccessful);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CLass
@@ -35,7 +39,11 @@ public:
 	void StartSession();
 
 	// class delegates
-	FMulitiplayerOnCreateSessionComplete MulitiplayerOnCreateSessionComplete;
+	FMultiplayerOnCreateSessionComplete		MultiplayerOnCreateSessionComplete;
+	FMultiplayerOnFindSessionsComplete		MultiplayerOnFindSessionsComplete;
+	FMultiplayerOnJoinSessionComplete		MultiplayerOnJoinSessionComplete;
+	FMultiplayerOnDestorySessionComplete	MultiplayerOnDestroySessionComplete;
+	FMultiplayerOnStartSessionComplete		MultiplayerOnStartSessionComplete;
 
 protected:
 	// Internal Callbacks for the delegates

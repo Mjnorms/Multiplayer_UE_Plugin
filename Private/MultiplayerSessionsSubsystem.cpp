@@ -8,11 +8,11 @@
 // PUBLIC
 
 UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
-	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
-	FindSessionsCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete)),
-	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete)),
-	DestroySessionCompleteDelegate(FOnDestroySessionCompleteDelegate::CreateUObject(this, &ThisClass::OnDestroySessionComplete)),
-	StartSessionCompleteDelegate(FOnStartSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnStartSessionComplete))
+	CreateSessionCompleteDelegate(	FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete)),
+	FindSessionsCompleteDelegate(	FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete)),
+	JoinSessionCompleteDelegate(	FOnJoinSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnJoinSessionComplete)),
+	DestroySessionCompleteDelegate(	FOnDestroySessionCompleteDelegate::CreateUObject(this, &ThisClass::OnDestroySessionComplete)),
+	StartSessionCompleteDelegate(	FOnStartSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnStartSessionComplete))
 {
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 
@@ -71,7 +71,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 numPublicConnections, FS
 	if (!created)
 	{
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
-		MulitiplayerOnCreateSessionComplete.Broadcast(false);
+		MultiplayerOnCreateSessionComplete.Broadcast(false);
 	}
 }
 
@@ -102,7 +102,7 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName sessionName, b
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegateHandle);
 	}
 
-	MulitiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful);
+	MultiplayerOnCreateSessionComplete.Broadcast(bWasSuccessful);
 }
 
 void UMultiplayerSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)

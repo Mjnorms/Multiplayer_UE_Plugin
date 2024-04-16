@@ -25,7 +25,8 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 public:
 
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 numConnections = 4, FString typeOfMatch = FString(TEXT("FFA")));
+	void MenuSetup(TSoftObjectPtr<UWorld> lobbyLevel, int32 numConnections = 4, FString typeOfMatch = FString(TEXT("FFA")));
+	void MenuSetup(FString lobbyPath = FString(TEXT("/Game/ThirdPerson/Maps/Lobby")), int32 numConnections = 4, FString typeOfMatch = FString(TEXT("FFA")));
 
 protected:
 	virtual bool Initialize() override;
@@ -51,6 +52,7 @@ private:
 	UFUNCTION()
 	void JoinButtonClicked();
 
+	void MenuSetup_Internal();
 	void MenuTeardown();
 
 	// subsystem designed to handle all online func
@@ -59,6 +61,7 @@ private:
 	// TODO: Update these variables with a server browser
 	int32 m_numPublicConnections{ 4 };
 	FString m_matchType{TEXT("FFA")};
+	FString m_pathToLobby{TEXT("/Game/ThirdPerson/Maps/Lobby")};
 
 	// Multiplayer Subsystem delegates
 	FMultiplayerOnCreateSessionComplete MulitiplayerOnCreateSessionComplete;

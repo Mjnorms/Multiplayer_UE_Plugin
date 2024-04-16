@@ -130,6 +130,27 @@ void UMultiplayerSessionsSubsystem::DestroySession()
 
 void UMultiplayerSessionsSubsystem::StartSession()
 {
+	if (!SessionInterface.IsValid())
+	{
+		MultiplayerOnStartSessionComplete.Broadcast(false);
+		UE_LOG(LogTemp, Warning, TEXT("UMultiplayerSessionsSubsystem -> StartSession : SessionInterface is not valid"));
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan,
+		FString(TEXT("Attempting to start match"))
+	);
+
+	StartSessionCompleteDelegateHandle = SessionInterface->AddOnStartSessionCompleteDelegate_Handle(StartSessionCompleteDelegate);
+	bool started = SessionInterface->StartSession(NAME_GameSession);
+	if (!started)
+	{
+		SessionInterface->ClearOnStartSessionCompleteDelegate_Handle(StartSessionCompleteDelegateHandle);
+		MultiplayerOnStartSessionComplete.Broadcast(false);
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan,
+			FString(TEXT("StartSession failed"))
+		);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -176,4 +197,9 @@ void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName sessionName, 
 
 void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName sessionName, bool bWasSuccessful)
 {
+	if (SessionInterface)
+	{
+		SessionInterface->ClearOnStartSessionCompleteDelegate_Handle(StartSessionCompleteDelegateHandle);
+	}
+	MultiplayerOnStartSessionComplete.Broadcast(bWasSuccessful);
 }

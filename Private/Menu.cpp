@@ -6,48 +6,22 @@
 // PUBLIC
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void UMenu::MenuSetup(int32 numConnections, FString typeOfMatch)
+void UMenu::MenuSetup(TSoftObjectPtr<UWorld> lobbyLevel, int32 numConnections, FString typeOfMatch)
 {
 	m_numPublicConnections = numConnections;
 	m_matchType = typeOfMatch;
-	AddToViewport();
-	SetVisibility(ESlateVisibility::Visible);
-	bIsFocusable = true;
+	m_pathToLobby = lobbyLevel.GetLongPackageName().Append("?listen");
 
-	UWorld* world = GetWorld();
-	if (world == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> MenuSetup : GetWorld failed"));
-		return;
-	}
-	APlayerController* playerController = world->GetFirstPlayerController();
-	if (playerController == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> MenuSetup : GetFirstPlayerController failed"));
-		return;
-	}
+	MenuSetup_Internal();
+}
 
-	FInputModeUIOnly inputModeData;
-	inputModeData.SetWidgetToFocus(TakeWidget());
-	inputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	playerController->SetInputMode(inputModeData);
-	playerController->SetShowMouseCursor(true);
+void UMenu::MenuSetup(FString lobbyPath, int32 numConnections, FString typeOfMatch)
+{
+	m_numPublicConnections = numConnections;
+	m_matchType = typeOfMatch;
+	m_pathToLobby = FString::Printf(TEXT("%s?listen"), *lobbyPath);
 
-	UGameInstance* GameInstance = GetGameInstance();
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> MenuSetup : Get Game Instance failed"));
-		return;
-	}
-	MultiplayerSessionSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
-	if (MultiplayerSessionSubsystem)
-	{
-		MultiplayerSessionSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic	(this, &ThisClass::OnCreateSession);
-		MultiplayerSessionSubsystem->MultiplayerOnFindSessionsComplete.AddUObject	(this, &ThisClass::OnFindSessions);
-		MultiplayerSessionSubsystem->MultiplayerOnJoinSessionComplete.AddUObject	(this, &ThisClass::OnJoinSession);
-		MultiplayerSessionSubsystem->MultiplayerOnDestroySessionComplete.AddDynamic	(this, &ThisClass::OnDestroySession);
-		MultiplayerSessionSubsystem->MultiplayerOnStartSessionComplete.AddDynamic	(this, &ThisClass::OnStartSession);
-	}
+	MenuSetup_Internal();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,7 +76,7 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		World->ServerTravel(FString("/Game/ThirdPerson/Maps/Lobby?listen"));
+		World->ServerTravel(m_pathToLobby);
 	}
 }
 
@@ -157,6 +131,9 @@ void UMenu::OnDestroySession(bool bWasSuccessful)
 
 void UMenu::OnStartSession(bool bWasSuccessful)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan,
+		FString::Printf(TEXT("Start Session Result: %s"), bWasSuccessful ? "Success" : "Failed")
+	);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -177,6 +154,47 @@ void UMenu::JoinButtonClicked()
 	if (MultiplayerSessionSubsystem)
 	{
 		MultiplayerSessionSubsystem->FindSessions(SESSIONS_TO_FIND);
+	}
+}
+
+void UMenu::MenuSetup_Internal()
+{
+	AddToViewport();
+	SetVisibility(ESlateVisibility::Visible);
+
+	UWorld* world = GetWorld();
+	if (world == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> MenuSetup : GetWorld failed"));
+		return;
+	}
+	APlayerController* playerController = world->GetFirstPlayerController();
+	if (playerController == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> MenuSetup : GetFirstPlayerController failed"));
+		return;
+	}
+
+	FInputModeUIOnly inputModeData;
+	inputModeData.SetWidgetToFocus(TakeWidget());
+	inputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	playerController->SetInputMode(inputModeData);
+	playerController->SetShowMouseCursor(true);
+
+	UGameInstance* GameInstance = GetGameInstance();
+	if (GameInstance == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> MenuSetup : Get Game Instance failed"));
+		return;
+	}
+	MultiplayerSessionSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
+	if (MultiplayerSessionSubsystem)
+	{
+		MultiplayerSessionSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &ThisClass::OnCreateSession);
+		MultiplayerSessionSubsystem->MultiplayerOnFindSessionsComplete.AddUObject(this, &ThisClass::OnFindSessions);
+		MultiplayerSessionSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &ThisClass::OnJoinSession);
+		MultiplayerSessionSubsystem->MultiplayerOnDestroySessionComplete.AddDynamic(this, &ThisClass::OnDestroySession);
+		MultiplayerSessionSubsystem->MultiplayerOnStartSessionComplete.AddDynamic(this, &ThisClass::OnStartSession);
 	}
 }
 

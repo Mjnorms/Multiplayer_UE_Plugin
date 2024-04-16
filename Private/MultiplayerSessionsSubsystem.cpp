@@ -43,7 +43,11 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 numPublicConnections, FS
 	auto existingSession = SessionInterface->GetNamedSession(NAME_GameSession);
 	if (existingSession != nullptr)
 	{
-		SessionInterface->DestroySession(NAME_GameSession);
+		m_bcreateSessionOnDestroy = true;
+		m_lastNumPublicConnections = numPublicConnections;
+		m_lastMatchType = matchType;
+		DestroySession();
+		return;
 	}
 
 	//Add delegate to interface delegate list, and store it in the handle
@@ -126,6 +130,22 @@ void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult
 
 void UMultiplayerSessionsSubsystem::DestroySession()
 {
+	if (!SessionInterface.IsValid())
+	{
+		MultiplayerOnDestroySessionComplete.Broadcast(false);
+		UE_LOG(LogTemp, Warning, TEXT("UMultiplayerSessionsSubsystem -> DestroySession : SessionInterface is not valid"));
+		return;
+	}
+	DestroySessionCompleteDelegateHandle =  SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegate);
+	bool destroyed = SessionInterface->DestroySession(NAME_GameSession);
+	if (!destroyed)
+	{
+		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegateHandle);
+		MultiplayerOnDestroySessionComplete.Broadcast(false);
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan,
+			FString(TEXT("DestroySession failed"))
+		);
+	}
 }
 
 void UMultiplayerSessionsSubsystem::StartSession()
@@ -193,6 +213,18 @@ void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName sessionName, EOn
 
 void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName sessionName, bool bWasSuccessful)
 {
+	if (SessionInterface)
+	{
+		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteDelegateHandle);
+	}
+	MultiplayerOnDestroySessionComplete.Broadcast(bWasSuccessful);
+
+	//create a new session if we were waiting for the destroy to finish
+	if (bWasSuccessful && m_bcreateSessionOnDestroy)
+	{
+		m_bcreateSessionOnDestroy = false;
+		CreateSession(m_lastNumPublicConnections, m_lastMatchType);
+	}
 }
 
 void UMultiplayerSessionsSubsystem::OnStartSessionComplete(FName sessionName, bool bWasSuccessful)

@@ -58,6 +58,7 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 numPublicConnections, FS
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bUseLobbiesIfAvailable = true;
+	SessionSettings->BuildUniqueId = 1;               //TODO: Update with a real build ID
 
 	SessionSettings->Set(FName("MatchType"), matchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Mjnorms -- 2024
 
 #pragma once
 
@@ -38,7 +38,7 @@ public:
 	void DestroySession();
 	void StartSession();
 
-	// class delegates
+	// this class's delegates
 	FMultiplayerOnCreateSessionComplete		MultiplayerOnCreateSessionComplete;
 	FMultiplayerOnFindSessionsComplete		MultiplayerOnFindSessionsComplete;
 	FMultiplayerOnJoinSessionComplete		MultiplayerOnJoinSessionComplete;
@@ -56,13 +56,14 @@ protected:
 private:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSettings> SessionSettings;
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
-	// Delegates (Don't forget to bind callbacks)
+	// Online session Delegates (Don't forget to bind callbacks)
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FDelegateHandle CreateSessionCompleteDelegateHandle;
 
 	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
-	FDelegateHandle FindSessionCompleteDelegateHandle;
+	FDelegateHandle FindSessionsCompleteDelegateHandle;
 
 	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
 	FDelegateHandle JoinSessionCompleteDelegateHandle;

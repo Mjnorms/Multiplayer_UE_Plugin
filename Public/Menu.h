@@ -1,15 +1,18 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Mjnorms -- 2024
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "CoreMinimal.h"
 #include "Components/Button.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "MultiplayerSessionsSubsystem.h"
 #include "OnlineSessionSettings.h"
-#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSubsystem.h"
 
 #include "Menu.generated.h"
+
+#define SESSIONS_TO_FIND 100000 // Find a lot until we get a new steam dev app ID 
 
 /**
  * 
@@ -28,7 +31,7 @@ protected:
 	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
 
-	//callbacks
+	// Multiplayer Subsystem delegate callbacks
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
 	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& sessionResults, bool bWasSuccessful);
@@ -41,13 +44,10 @@ protected:
 private:
 	UPROPERTY(meta = (BindWidget))
 	UButton* HostButton;
-
 	UPROPERTY(meta = (BindWidget))
 	UButton* JoinButton;
-
 	UFUNCTION()
 	void HostButtonClicked();
-
 	UFUNCTION()
 	void JoinButtonClicked();
 
@@ -56,9 +56,10 @@ private:
 	// subsystem designed to handle all online func
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionSubsystem;
 
-	//variables
-	int32 numPublicConnections{ 4 };
-	FString matchType{TEXT("FFA")};
+	// TODO: Update these variables with a server browser
+	int32 m_numPublicConnections{ 4 };
+	FString m_matchType{TEXT("FFA")};
 
+	// Multiplayer Subsystem delegates
 	FMultiplayerOnCreateSessionComplete MulitiplayerOnCreateSessionComplete;
 };

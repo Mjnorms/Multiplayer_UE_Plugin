@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Mjnorms -- 2024
 
 #include "Menu.h"
 
@@ -9,8 +8,8 @@
 
 void UMenu::MenuSetup(int32 numConnections, FString typeOfMatch)
 {
-	numPublicConnections = numConnections;
-	matchType = typeOfMatch;
+	m_numPublicConnections = numConnections;
+	m_matchType = typeOfMatch;
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	bIsFocusable = true;
@@ -107,12 +106,49 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 	}
 }
 
+// TODO: Create a server list; for now, just connect to the first match type in 
+// our steam region that matches this class's member variable m_matchType
 void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& sessionResults, bool bWasSuccessful)
 {
+	if (MultiplayerSessionSubsystem == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MultiplayerSessions -> Menu -> OnFindSessions : MultiplayerSessionSubsystem does not exist"));
+		return;
+	}
+
+	for (auto result : sessionResults)
+	{
+		FString result_matchType;
+		result.Session.SessionSettings.Get(FName("MatchType"), result_matchType);
+		if (result_matchType == m_matchType)
+		{
+			MultiplayerSessionSubsystem->JoinSession(result);
+		}
+	}
 }
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type result)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan,
+		FString::Printf(TEXT("Join Result: %s"), result)
+	);
+
+	// Travel to IP Address
+	IOnlineSubsystem* subsystem = IOnlineSubsystem::Get();
+	if (subsystem)
+	{
+		IOnlineSessionPtr sessionInterface = subsystem->GetSessionInterface();
+		if (sessionInterface.IsValid())
+		{
+			FString address;
+			sessionInterface->GetResolvedConnectString(NAME_GameSession, address);
+			APlayerController* playerController = GetGameInstance()->GetFirstLocalPlayerController();
+			if (playerController)
+			{
+				playerController->ClientTravel(address, ETravelType::TRAVEL_Absolute);
+			}
+		}
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -132,21 +168,15 @@ void UMenu::HostButtonClicked()
 	if (MultiplayerSessionSubsystem)
 	{
 		//Create the session
-		MultiplayerSessionSubsystem->CreateSession(numPublicConnections, matchType);
+		MultiplayerSessionSubsystem->CreateSession(m_numPublicConnections, m_matchType);
 	}
 }
 
 void UMenu::JoinButtonClicked()
 {
-
-	if (GEngine)
+	if (MultiplayerSessionSubsystem)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			15.f,
-			FColor::Yellow,
-			FString(TEXT("Join Button Clicked"))
-		);
+		MultiplayerSessionSubsystem->FindSessions(SESSIONS_TO_FIND);
 	}
 }
 

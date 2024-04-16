@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Mjnorms -- 2024
 
 #include "MultiplayerSessionsSubsystem.h"
 
@@ -22,10 +21,7 @@ UMultiplayerSessionsSubsystem::UMultiplayerSessionsSubsystem():
 
 		if (GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.f,
-				FColor::Blue,
+			GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Blue,
 				FString::Printf(TEXT("Found Subsytem %s"), *Subsystem->GetSubsystemName().ToString())
 			);
 		}
@@ -77,10 +73,54 @@ void UMultiplayerSessionsSubsystem::CreateSession(int32 numPublicConnections, FS
 
 void UMultiplayerSessionsSubsystem::FindSessions(int32 numSearchResults)
 {
+	if (!SessionInterface.IsValid()) return;
+
+	//Add delegate to interface delegate list, save handle
+	FindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegate);
+
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	SessionSearch->MaxSearchResults = numSearchResults;
+	SessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL";
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+
+	//find sessions
+	const ULocalPlayer* localPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	bool found = SessionInterface->FindSessions(*(localPlayer->GetPreferredUniqueNetId()), SessionSearch.ToSharedRef());
+	if (!found)
+	{
+		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegateHandle);
+		MultiplayerOnFindSessionsComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+	}
 }
 
-void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult& SessionResult)
+void UMultiplayerSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult& sessionResult)
 {
+	if (!SessionInterface.IsValid()) 
+	{
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		UE_LOG(LogTemp, Warning, TEXT("UMultiplayerSessionsSubsystem -> JoinSession : SessionInterface is not valid"));
+		return;
+	}
+
+	// log 
+	FString result_matchType;
+	sessionResult.Session.SessionSettings.Get(FName("MatchType"), result_matchType);
+	GEngine->AddOnScreenDebugMessage( -1, 15.f, FColor::Cyan,
+		FString::Printf(TEXT("Attempting to join match type %s"), *result_matchType)
+	);
+	
+	// join
+	JoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+	const ULocalPlayer* localPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	bool joined = SessionInterface->JoinSession(*(localPlayer->GetPreferredUniqueNetId()), NAME_GameSession, sessionResult);
+	if (!joined)
+	{
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+		MultiplayerOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan,
+			FString(TEXT("JoinSession failed"))
+		);
+	}
 }
 
 void UMultiplayerSessionsSubsystem::DestroySession()
@@ -107,10 +147,26 @@ void UMultiplayerSessionsSubsystem::OnCreateSessionComplete(FName sessionName, b
 
 void UMultiplayerSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)
 {
+	if (SessionInterface)
+	{
+		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(FindSessionsCompleteDelegateHandle);
+	}
+
+	if (SessionSearch->SearchResults.Num() == 0)
+	{
+		MultiplayerOnFindSessionsComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+	}
+
+	MultiplayerOnFindSessionsComplete.Broadcast(SessionSearch->SearchResults, bWasSuccessful);
 }
 
 void UMultiplayerSessionsSubsystem::OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type bWasSuccessful)
 {
+	if (SessionInterface)
+	{
+		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegateHandle);
+	}
+	MultiplayerOnJoinSessionComplete.Broadcast(bWasSuccessful);
 }
 
 void UMultiplayerSessionsSubsystem::OnDestroySessionComplete(FName sessionName, bool bWasSuccessful)
